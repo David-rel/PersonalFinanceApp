@@ -5,7 +5,7 @@ const sql = require("mssql");
 const config = {
   user: process.env.NEXT_PUBLIC_SQL_USER,
   password: process.env.NEXT_PUBLIC_SQL_PASSWORD,
-  server: process.env.NEXT_PUBLIC_SQL_SERVER,
+  server: process.env.NEXT_PUBLIC_SQL_DATABASE,
   database: process.env.NEXT_PUBLIC_SQL_NAME,
   options: {
     encrypt: true, // Required for Azure SQL

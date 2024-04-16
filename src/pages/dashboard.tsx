@@ -1,4 +1,5 @@
 // pages/dashboard.tsx
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 interface Transaction {
@@ -19,6 +20,12 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [transactionDate, setTransactionDate] = useState<string>(
+    new Date().toISOString().slice(0, 10)
+  );
+  const [filterMonth, setFilterMonth] = useState<string>(
+    new Date().toISOString().slice(0, 7)
+  ); // YYYY-MM
 
   const [amount, setAmount] = useState<string>("");
   const [transactionType, setTransactionType] = useState<TransactionType>(
@@ -26,6 +33,12 @@ const Dashboard = () => {
   );
   const [category, setCategory] = useState<string>("Job");
   const [description, setDescription] = useState<string>("");
+
+  const getMonthName = (date: Date) => {
+    return date.toLocaleString("default", { month: "long" });
+  };
+
+  const currentMonthName = getMonthName(new Date()); // Gets the current month name
 
   // Defining the categories with a strict type
   const categories: Record<TransactionType, string[]> = {
@@ -37,23 +50,68 @@ const Dashboard = () => {
     fetchTransactions();
   }, []);
 
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return `${(date.getMonth() + 1).toString().padStart(2, "0")}/${date
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+  };
+
+  const formatDateToLocal = (dateString: string): string => {
+    // Input is expected in YYYY-MM-DD format from the date input
+    const [year, month, day] = dateString.split("-").map(Number);
+    // Construct a new Date object and add one day to the date
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + 1); // Add 1 day to correct the timezone offset issue
+
+    // Format the date back to MM/DD/YYYY format
+    return `${(date.getMonth() + 1).toString().padStart(2, "0")}/${date
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+  };
+
+  const getCurrentMonthDateRange = () => {
+    const date = new Date();
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    return { firstDay, lastDay };
+  };
+
   const fetchTransactions = async () => {
+    const { firstDay, lastDay } = getCurrentMonthDateRange();
+    const firstDayStr = firstDay.toISOString().slice(0, 10);
+    const lastDayStr = lastDay.toISOString().slice(0, 10);
+
     try {
       const response = await fetch("/api/getData");
-      if (!response.ok) throw new Error("Data could not be fetched");
       const data = await response.json();
+      const filteredData = data.filter((t: Transaction) => {
+        const transactionDate = t.TransactionDate.slice(0, 10); // Assuming date comes in 'YYYY-MM-DD' format
+        return transactionDate >= firstDayStr && transactionDate <= lastDayStr;
+      });
       setTransactions(
-        data.map((t: Transaction) => ({
+        filteredData.map((t: Transaction) => ({
           ...t,
-          TransactionDate: new Date(t.TransactionDate).toLocaleDateString(), // Format date
+          TransactionDate: formatDate(t.TransactionDate), // Ensure dates are uniformly formatted for display
         }))
       );
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error);
     }
   };
+
+  // Filter transactions in the rendering or add a useEffect to do this whenever filterMonth changes
+  const filteredTransactions = transactions.filter((transaction) => {
+    // Split the formatted transaction date "MM/DD/YYYY"
+    const [month, day, year] =
+      transaction.TransactionDate.split("/").map(Number);
+    // Create a comparable string from the transaction date
+    const transactionMonthYear = `${year}-${month.toString().padStart(2, "0")}`; // "YYYY-MM"
+
+    return transactionMonthYear === filterMonth;
+  });
 
   const logout = () => {
     // Assuming you're storing a token or some form of credentials:
@@ -68,6 +126,9 @@ const Dashboard = () => {
 
   const addTransaction = async () => {
     try {
+      const formattedDate = new Date(transactionDate)
+        .toISOString()
+        .slice(0, 10);
       const response = await fetch("/api/addData", {
         method: "POST",
         headers: {
@@ -76,6 +137,7 @@ const Dashboard = () => {
         body: JSON.stringify({
           amount: parseFloat(amount),
           transactionType,
+          transactionDate: formattedDate, // Send in ISO format
           category,
           description,
         }),
@@ -175,18 +237,12 @@ const Dashboard = () => {
       transactionDate.getMonth(),
       1
     );
-    const firstDayOfWeek = firstDayOfMonth.getDay() || 7;
-    const offsetDate = transactionDate.getDate() + firstDayOfWeek - 1;
-    return Math.floor(offsetDate / 7);
-  };
-
-  // Part of the Dashboard component
-
-  const getTopCategory = (categories: { [category: string]: number }) => {
-    return Object.entries(categories).reduce(
-      (top, current) => (current[1] > top[1] ? current : top),
-      ["", 0]
-    );
+    // Get the day of the week for the first day of the month (0-6, Sun-Sat)
+    const firstDayOfWeek = firstDayOfMonth.getDay();
+    // Calculate the week number
+    const offset = (firstDayOfWeek < 6 ? 0 : 7) - firstDayOfWeek; // Adjust for start day of the week (Sunday in US)
+    const adjustedDate = transactionDate.getDate() + offset;
+    return Math.floor(adjustedDate / 7);
   };
 
   const weeklySummary = (type: string) => {
@@ -222,13 +278,31 @@ const Dashboard = () => {
   const incomeSummaryByWeek = weeklySummary("Income");
   const expenseSummaryByWeek = weeklySummary("Expense");
 
+  const addOneDay = (dateString: String) => {
+    const [month, day, year] = dateString.split("/").map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + 1); // Add one day
+
+    return `${(date.getMonth() + 1).toString().padStart(2, "0")}/${date
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()}`;
+  };
+
   // Updated return section of the Dashboard component
   return (
     <div className="container mx-auto p-4 space-y-8 bg-slate-50">
-      <h1 className="text-2xl font-bold text-center">Transaction Dashboard</h1>
+      <h1 className="text-2xl font-bold text-center">
+        Transaction Dashboard for: {currentMonthName}
+      </h1>
       <button onClick={logout} className=" bg-red-600 p-2 rounded-lg ">
         Logout
       </button>
+      <div className="absolute">
+        <Link href="/pastAndFuture" legacyBehavior>
+          <a className="bg-blue-600 p-3 rounded-lg">View Past & Future</a>
+        </Link>
+      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -245,6 +319,15 @@ const Dashboard = () => {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
+          <input
+            type="date"
+            className="input input-bordered w-full"
+            value={transactionDate}
+            onChange={(e) =>
+              setTransactionDate(formatDateToLocal(e.target.value))
+            }
+          />
+
           <select
             className="select select-bordered w-full"
             value={transactionType}
@@ -305,7 +388,7 @@ const Dashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((transaction) => (
+            {filteredTransactions.map((transaction) => (
               <tr
                 key={transaction.TransactionID}
                 className={
@@ -315,7 +398,8 @@ const Dashboard = () => {
                 }
               >
                 <td>${transaction.Amount.toFixed(2)}</td>
-                <td>{transaction.TransactionDate}</td>
+                <td>{addOneDay(transaction.TransactionDate)}</td>{" "}
+                {/* Adjust the date here */}
                 <td>{transaction.TransactionType}</td>
                 <td>{transaction.Category}</td>
                 <td>{transaction.Description}</td>
