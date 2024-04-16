@@ -298,11 +298,9 @@ const Dashboard = () => {
       <button onClick={logout} className=" bg-red-600 p-2 rounded-lg ">
         Logout
       </button>
-      <div className="absolute">
-        <Link href="/pastAndFuture" legacyBehavior>
-          <a className="bg-blue-600 p-3 rounded-lg">View Past & Future</a>
-        </Link>
-      </div>
+      <Link href="/pastAndFuture" legacyBehavior>
+        <a className="bg-blue-600 p-3 rounded-lg ml-4">View Past & Future</a>
+      </Link>
 
       <form
         onSubmit={handleSubmit}
@@ -323,9 +321,7 @@ const Dashboard = () => {
             type="date"
             className="input input-bordered w-full"
             value={transactionDate}
-            onChange={(e) =>
-              setTransactionDate(e.target.value)
-            }
+            onChange={(e) => setTransactionDate(e.target.value)}
           />
 
           <select
