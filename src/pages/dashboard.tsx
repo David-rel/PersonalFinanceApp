@@ -324,7 +324,7 @@ const Dashboard = () => {
             className="input input-bordered w-full"
             value={transactionDate}
             onChange={(e) =>
-              setTransactionDate(formatDateToLocal(e.target.value))
+              setTransactionDate(e.target.value)
             }
           />
 
