@@ -19,6 +19,11 @@ interface CategorizedTransactions {
   Expense: TransactionsByCategory;
 }
 
+interface CategorizedTransactions {
+  [key: string]: TransactionsByCategory; // This allows any string as a key.
+}
+
+
 interface OverviewData {
   totalIncome: number;
   totalExpense: number;
@@ -59,6 +64,16 @@ function PastAndFuture() {
     }
   };
 
+  const defaultOverviewData: OverviewData = {
+    totalIncome: 0,
+    totalExpense: 0,
+    net: 0,
+    biggestIncomeCategory: "",
+    biggestIncomeAmount: 0,
+    biggestExpenseCategory: "",
+    biggestExpenseAmount: 0,
+  };
+
   const groupTransactionsByMonth = (
     transactions: Transaction[]
   ): ExtendedGroupedTransactions => {
@@ -68,7 +83,7 @@ function PastAndFuture() {
       if (!grouped[monthYear]) {
         grouped[monthYear] = {
           data: { Income: {}, Expense: {} },
-          overview: undefined,
+          overview: defaultOverviewData,
         };
       }
       const typeGroup =
