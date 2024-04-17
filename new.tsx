@@ -81,6 +81,7 @@ function PastAndFuture() {
       typeGroup[transaction.Category].push(transaction);
     });
 
+    // Ensure the overview is computed for each monthYear
     Object.keys(grouped).forEach((monthYear) => {
       if (grouped[monthYear].data) {
         grouped[monthYear].overview = computeOverview(grouped[monthYear].data);
@@ -142,13 +143,6 @@ function PastAndFuture() {
     localStorage.removeItem("userToken");
     document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
     window.location.href = "/";
-  };
-
-  const toggleMonth = (monthYear: string) => {
-    setExpandedMonths((prev) => ({
-      ...prev,
-      [monthYear]: !prev[monthYear],
-    }));
   };
 
   return (
@@ -222,28 +216,25 @@ function PastAndFuture() {
                   )}
                 </div>
               ))}
-              {overview && (
-                <div className="mt-4 p-4 bg-gray-100 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-2">
-                    Monthly Overview
-                  </h3>
-                  <p>Total Income: ${overview.totalIncome.toFixed(2)}</p>
-                  <p>Total Expense: ${overview.totalExpense.toFixed(2)}</p>
-                  <p>
-                    Net: ${overview.net.toFixed(2)} (
-                    {overview.net >= 0 ? "Positive" : "Negative"})
-                  </p>
-                  <p>
-                    Biggest Income Category: {overview.biggestIncomeCategory} ($
-                    {overview.biggestIncomeAmount.toFixed(2)})
-                  </p>
-                  <p>
-                    Biggest Expense Category: {overview.biggestExpenseCategory}{" "}
-                    ($
-                    {overview.biggestExpenseAmount.toFixed(2)})
-                  </p>
-                </div>
-              )}
+            </div>
+          )}
+          {overview && (
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">Monthly Overview</h3>
+              <p>Total Income: ${overview.totalIncome.toFixed(2)}</p>
+              <p>Total Expense: ${overview.totalExpense.toFixed(2)}</p>
+              <p>
+                Net: ${overview.net.toFixed(2)} (
+                {overview.net >= 0 ? "Positive" : "Negative"})
+              </p>
+              <p>
+                Biggest Income Category: {overview.biggestIncomeCategory} ($
+                {overview.biggestIncomeAmount.toFixed(2)})
+              </p>
+              <p>
+                Biggest Expense Category: {overview.biggestExpenseCategory} ($
+                {overview.biggestExpenseAmount.toFixed(2)})
+              </p>
             </div>
           )}
         </section>

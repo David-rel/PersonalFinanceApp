@@ -299,7 +299,7 @@ const Dashboard = () => {
         Logout
       </button>
       <Link href="/pastAndFuture" legacyBehavior>
-        <a className="bg-blue-600 p-3 rounded-lg ml-4">View Past & Future</a>
+        <a className="bg-blue-600 p-3 rounded-lg ml-4">View Past Reports</a>
       </Link>
 
       <form
